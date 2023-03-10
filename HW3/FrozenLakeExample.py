@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
 
+from utils import QValueIteration, PolicyEvaluation
 
 def fancy_visual(value_func, policy_int):
     """This function can be used to generate a heat map that will be displayed. Will show the plot when called.
@@ -40,27 +41,38 @@ def fancy_visual(value_func, policy_int):
 
 
 # Setting up the gymnasium environment
-env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", is_slippery=True)
+#reset the slippery parameter when I finish testing my outputs
+env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", is_slippery=False)
 gamma = 0.9
 
 # Obtaining environment details
-print('Number of Actions', env.action_space.n)
-print('Number of States ', env.observation_space.n)
-print('P[10,3]', env.P[10][3])
+# print('Number of Actions', env.action_space.n)
+# print('Number of States ', env.observation_space.n)
+# print('P[10,3]', env.P[10][3])
+# test_value = np.random.rand(16)  # Random Value Function (only for plotting)
+# test_policy = np.random.randint(0, 3, 16)  # Random Policy (only for plotting)
+# fancy_visual(test_value, test_policy)
 
-test_value = np.random.rand(16)  # Random Value Function (only for plotting)
-test_policy = np.random.randint(0, 3, 16)  # Random Policy (only for plotting)
-fancy_visual(test_value, test_policy)
+#Q Learning example, taken from the test code
+# state, info = env.reset()  # Reset the env
+# max_step = 20
+# for step in range(max_step):
+#     action = env.action_space.sample()  # Random Action
+#     n_state, reward, terminal, truncated, info = env.step(
+#         action)  # Take a step
+#     print("Time:", step, 'State:', state, 'Action:', action, 'Reward:',
+#           reward, 'Next State:', n_state, 'Terminal:', terminal)
+#     state = n_state
+#     if terminal or truncated:  # Episode ends if the termination or truncation is true
+#         break
 
-# Q Learning example, taken from the test code
-state, info = env.reset()  # Reset the env
-max_step = 20
-for step in range(max_step):
-    action = env.action_space.sample()  # Random Action
-    n_state, reward, terminal, truncated, info = env.step(
-        action)  # Take a step
-    print("Time:", step, 'State:', state, 'Action:', action, 'Reward:',
-          reward, 'Next State:', n_state, 'Terminal:', terminal)
-    state = n_state
-    if terminal or truncated:  # Episode ends if the termination or truncation is true
-        break
+##################Begin Assignment Work Here###############
+#Q-Value Iteration: implement the Q-Value Function on the frozen lake environment
+#a. What is the optimal policy and value function (will need to use the fancy visual function)
+
+state, info = env.reset()
+QvF, policy = QValueIteration(env.observation_space.n, env.action_space.n, env.P, gamma=gamma, iterations=100)
+fancy_visual(np.max(QvF, -1), policy)
+
+vF = PolicyEvaluation(env.observation_space.n, env.P, policy, gamma=gamma, iterations=100)
+fancy_visual(vF, policy)
