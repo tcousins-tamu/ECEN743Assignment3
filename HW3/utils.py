@@ -3,11 +3,150 @@ import seaborn
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
-
+from random import choices
 ###############################Learning Section###########################
 #contains all code relevant to the "Learning" Section of the hw.
-def QLearning(environment, gamma=.9):
+#Attempt Two
+# epsilon_decay=.6, epsilon_final=.05
+def QLearning(env, gamma=.9, episodes = 100, epsilon = 0):
+    """This function performs the Q-learning algorithm and returns the policy
+    and Q-value function
+
+    Args:
+        environment (_type_): _description_
+        gamma (float, optional): _description_. Defaults to .9.
+
+    Returns:
+        _type_: _description_
+    """
+    #Step One: Creating the Q table
+    numStates = env.observation_space.n
+    numActions = env.action_space.n
+    QvF = np.zeros([numStates, numActions])
+    nPolicy = np.zeros(numStates)
+    
+    for episode in range(episodes):
+        state, _ = env.reset()
+        steps = 0
+        while True:
+            #choose action with the highest value
+            choice = choices(["max", "random"], [1-epsilon, epsilon])
+            if (choice == ["max"]) and (np.max(QvF[state]) > 0):
+                action = np.argmax(QvF[state])
+            #choose random action
+            else:
+                action = env.action_space.sample()
+            #take the action and update the Qvalue function
+            nState, reward, terminal, _, _ = env.step(action)
+            
+            #case was added to remove the worthless cases. They were somewhat slowing down convergence
+            if nState!=state:
+                QvF[state][action] = reward+gamma*(max(QvF[nState]))
+                state = nState
+            
+            #if it is a terminating condition, break.
+            steps +=1
+            if terminal:
+                #on a successful run, we will mitigate the egreedy varaiable
+                # epsilon=epsilon*epsilon_decay
+                # if epsilon<epsilon_final:
+                #     epsilon=epsilon_final
+                if nState == 15:
+                    print("Converged in: ", episode, " episodes.", "Took: ", steps, " steps")
+                break
+    
+    for state in range(numStates):
+        nPolicy[state]=np.argmax(QvF[state])
+         
     return QvF, nPolicy
+
+#Monte Carlo Policy Evauluation:
+def MonteCarloPolicyEvaluation(env, policy=None, episodes=100, gamma=.9):
+    """This will do monte carlo policy evaluation on a given policy.
+    This may lead to a diffferent output than anticipated, as it will only
+    explore based on the policy provided. NOTE THIS IS NOT EVERY VISIT
+
+    Args:
+        env (_type_): environment
+        policy (_type_, optional): _description_. Defaults to None.
+        episodes (int, optional): _description_. Defaults to 100.
+        gamma (float, optional): _description_. Defaults to .9.
+
+    Returns:
+        _type_: _description_
+    """
+    actions  = np.asarray(range(env.action_space.n))
+    vF = np.zeros(env.observation_space.n)
+    for episode in range(episodes):
+        state, _ = env.reset()
+        steps = 0
+        trajectory = []
+        while True:
+            if policy is None:
+                action = choices(actions)
+            else:
+                action = policy[state]
+            
+            #taking a step and calculating the reward
+            nState, reward, terminal, _, _ = env.step(action)
+            steps+=1
+            #updating the trajectory
+            trajectory.append(state)
+            
+            state = nState
+            
+            if terminal:
+                break
+        #we know that this works, because the reward of 1 is only at the goal
+        for steps, visited in enumerate(reversed(trajectory)):
+            vF[visited] += gamma**(steps+1)*reward    
+            
+    #For our new value function, we want to look to see what the inferred policy is
+    vF = vF/episodes
+    # for state in range(env.observation_space.n):
+        
+    return vF
+
+#TD-Learning Implementation
+def TDPolicyEvaluation(env, policy=None, episodes=100, gamma=.9, alpha=.5):
+    """This will do monte carlo policy evaluation on a given policy.
+    This may lead to a diffferent output than anticipated, as it will only
+    explore based on the policy provided. NOTE THIS IS NOT EVERY VISIT
+
+    Args:
+        env (_type_): environment
+        policy (_type_, optional): _description_. Defaults to None.
+        episodes (int, optional): _description_. Defaults to 100.
+        gamma (float, optional): _description_. Defaults to .9.
+
+    Returns:
+        _type_: _description_
+    """
+    actions  = np.asarray(range(env.action_space.n))
+    vF = np.zeros(env.observation_space.n)
+    for episode in range(episodes):
+        state, _ = env.reset()
+        steps = 0
+        trajectory = []
+        while True:
+            if policy is None:
+                action = choices(actions)
+            else:
+                action = policy[state]
+            
+            #taking a step and calculating the reward
+            nState, reward, terminal, _, _ = env.step(action)
+            
+            vF[state]= vF[state]+ alpha*(reward + gamma * vF[nState] - vF[state])
+            state = nState
+
+            if terminal:
+                break
+            
+    #For our new value function, we want to look to see what the inferred policy is
+    # vF = vF/episodes
+    # for state in range(env.observation_space.n):
+    return vF
 
 ###############################Planning Section###########################
 #Contains all code relevant to the "Planning" Section of the HW
@@ -32,7 +171,6 @@ def QValueIteration(numStates, numActions, probMatrix, gamma=.9, iterations = 10
     policy = np.zeros(numStates)
     
     #going until the number of iterations has been it, I should 
-    #add a metric for convergence in the future but this works for now
     for _ in range(iterations):
         #initialize a new Q-value function to be updated with results from this cycle
         nQvF = np.zeros([numStates, numActions])
