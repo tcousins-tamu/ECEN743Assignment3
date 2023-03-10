@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
 
-from utils import QValueIteration, PolicyEvaluation
+from utils import QValueIteration, PolicyEvaluation, PolicyIteration
 
 def fancy_visual(value_func, policy_int):
     """This function can be used to generate a heat map that will be displayed. Will show the plot when called.
@@ -71,8 +71,11 @@ gamma = 0.9
 #a. What is the optimal policy and value function (will need to use the fancy visual function)
 
 state, info = env.reset()
-QvF, policy = QValueIteration(env.observation_space.n, env.action_space.n, env.P, gamma=gamma, iterations=100)
-fancy_visual(np.max(QvF, -1), policy)
+# QvF, policy = QValueIteration(env.observation_space.n, env.action_space.n, env.P, gamma=gamma, iterations=100)
+# fancy_visual(np.max(QvF, -1), policy)
 
-vF = PolicyEvaluation(env.observation_space.n, env.P, policy, gamma=gamma, iterations=100)
-fancy_visual(vF, policy)
+# vF = PolicyEvaluation(env.observation_space.n, env.P, policy, gamma=gamma, iterations=100)
+# fancy_visual(vF, policy)
+
+vF, nP = PolicyIteration(env.observation_space.n, env.action_space.n, env.P, gamma=gamma, iterations=100)
+fancy_visual(vF, nP)
